@@ -63,16 +63,24 @@ public class OrderProcessor {
     /**
      * Method edits order on behalf of the specified user.
      *
-     * @param userId users id on behalf order should be created
-     * @param order order which should be created.
+     * @param userId users id on behalf order should be edited
+     * @param order order which should be edited.
      */
     public void editOrder(Long userId, Order order) {
         User owner = userController.getUserById(userId);
+        Order oldOrder = orderController.getOrderById(order.getId())
         assert owner != null;
-        if(!order.isUserOwner(owner)) //if user is not owner of order
+        assert oldOrder != null;
+        if(!oldOrder.isUserOwner(owner)) //if user is not owner of order
             throw new ForbiddenException("You can't edit not your own order");
-        if(order.isInFinalState()) //if order is completed or canceled
+        if(oldOrder.isInFinalState()) //if order is completed or canceled
             throw new ForbiddenException("You can't edit completed or canceled orders");
+        if(oldOrder.getExecutor() != order.getExecutor())
+            throw new ForbiddenException("You can't change executor");
+        if(oldOrder.getCreatedAt() != order.getCreatedAt())
+            throw new ForbiddenException("You can't change date of creation");
+        if(oldOrder.getStatus() == OrderStatus.Running)
+            throw new ForbiddenException("You can't change running order");
 
         orderController.saveOrUpdate(order);
     }
